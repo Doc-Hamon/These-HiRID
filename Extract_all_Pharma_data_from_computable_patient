@@ -21,6 +21,7 @@ echo "$after"
 echo 'Getting info from HUGE file on GFR_computable patients.' 
 
 #Créer la variable IDs du fichier Log_Patients.IDs (et supprime les \n de Windows)
+#Log_Patients.IDs = Computable_GFR.IDs créer dans 'Patient_with_computable_GFR'
 list_IDs=$(cat ${path2}/Log_Patients.IDs | tr "\n" " " )
 
 #Fait une Hash Table pour chercher les données associés aux IDs
