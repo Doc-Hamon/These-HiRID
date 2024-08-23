@@ -1,0 +1,38 @@
+#!/bin/bash 
+path="/mnt/c/Users/hamon/OneDrive/Bureau/hirid-a-high-time-resolution-icu-dataset-1.1.1/raw_stage/pharma_records/csv" 
+path2="/mnt/c/Users/hamon/OneDrive/Bureau/hirid-a-high-time-resolution-icu-dataset-1.1.1" 
+path3="/mnt/c/Users/hamon/OneDrive/Bureau/hirid-a-high-time-resolution-icu-dataset-1.1.1/Data_of_interest" 
+ 
+ #Nomme la première ligne des deux fichier et les créer
+head -n 1 ${path}/part-0.csv > ${path}/All_Pharma.csv 
+head -n 1 ${path}/part-0.csv > ${path3}/All_Pharma_GFR.csv 
+ 
+ #Copie toutes les données des part-*.csv pour les mettre dans All_Pharma
+before=$(date) 
+echo 'Merging HUGE file.' 
+for part_file in $(ls $path/part-*.csv) 
+do 
+	tail -n +2 $part_file >> ${path}/All_Pharma.csv 
+done 
+after=$(date) 
+echo "$before" 
+echo "$after" 
+ 
+echo 'Getting info from HUGE file on GFR_computable patients.' 
+
+#Créer la variable IDs du fichier Log_Patients.IDs (et supprime les \n de Windows)
+list_IDs=$(cat ${path2}/Log_Patients.IDs | tr "\n" " " )
+
+#Fait une Hash Table pour chercher les données associés aux IDs
+time awk -v ids="$list_IDs" 'BEGIN {
+    FS=",";
+    split(ids, id_array, " ");
+    for (i in id_array) {
+        id_map[id_array[i]] = 1;
+    }
+}
+{
+    if ($1 in id_map) {
+        print $0;
+    }
+}' ${path}/All_Pharma.csv >> ${path3}/All_Pharma_GFR.csv
