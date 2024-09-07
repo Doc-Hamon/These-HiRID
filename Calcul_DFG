@@ -9,7 +9,11 @@ Created on Wed Aug 14 00:50:45 2024
 import pandas as pd
 
 # Lire le fichier CSV
-df = pd.read_csv('c:/Users/hamon/OneDrive/Bureau/hirid-a-high-time-resolution-icu-dataset-1.1.1/Data_of_interest/All_Observation_GFR.csv', sep=',')
+df = pd.read_csv('c:/Users/hamon/OneDrive/Bureau/hirid-a-high-time-resolution-icu-dataset-1.1.1/Data_of_interest/All_Observation_GFR.csv', sep=',', low_memory= False)
+
+
+#Garde les colonnes d'intérêts
+df = df.drop(['entertime','status', 'stringvalue', 'type'], axis=1)
 
 # Convertir la colonne 'datetime' en datetime puis extraire 'time' et 'date'
 df['time'] = pd.to_datetime(df['datetime']).dt.time
@@ -38,6 +42,9 @@ elif "Creat_U2" in df_pivot.columns:
 else:
     df_pivot['Creat_u'] = None
 
+#Garde les colonnes d'intérêts
+df_pivot = df_pivot.filter(items=['Creat_Blood', 'Vol_U_Hourly', 'Creat_u'], axis=1)
+
 # Calculer la nouvelle variable DFG
 if all(col in df_pivot.columns for col in ["Vol_U_Hourly", "Creat_u", "Creat_Blood"]):
     df_pivot['DFG'] = df_pivot['Vol_U_Hourly'] * df_pivot['Creat_u'] / (df_pivot['Creat_Blood'] * 24)
@@ -50,10 +57,7 @@ df_pivot = df_pivot.reset_index()
 # Ajouter la colonne DFG à la première position si elle existe
 if 'DFG' in df_pivot.columns:
     cols = df_pivot.columns.tolist()
-    cols.insert(1, cols.pop(cols.index('DFG')))  
-    df_pivot = df_pivot[cols]
-    cols = df_pivot.columns.tolist()
-    cols.insert(1, cols.pop(cols.index('DFG')))  # Placer à la neuvième position
+    cols.insert(2, cols.pop(cols.index('DFG')))  
     df_pivot = df_pivot[cols]
 
 # Enregistrer le fichier CSV mis à jour
