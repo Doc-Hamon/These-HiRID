@@ -36,7 +36,7 @@ df_pivot.rename(columns=columns_to_rename, level=0, inplace=True, errors='coerce
 
 # Rassembler les Creat_U1 et Creat_U2 en une seule colonne, si elles existent
 if 'Creat_U1' in df_pivot.columns and 'Creat_U2' in df_pivot.columns:
-    df_pivot['Creat_u'] = df_pivot['Creat_U1'] + df_pivot['Creat_U2']
+    df_pivot['Creat_u'] = (df_pivot['Creat_U1'] + df_pivot['Creat_U2'])/2
 elif 'Creat_U1' in df_pivot.columns:
     df_pivot['Creat_u'] = df_pivot['Creat_U1']
 elif "Creat_U2" in df_pivot.columns:
