@@ -4,16 +4,18 @@
 Created on Wed Aug 14 00:50:45 2024
 
 @author: hamon
-"""
+""" 
 
 import pandas as pd
 
+path_in = 'c:/Users/hamon/OneDrive/Bureau/hirid-a-high-time-resolution-icu-dataset-1.1.1/Data_of_interest/All_Observation_GFR.csv'
+path_out = 'c:/Users/hamon/OneDrive/Bureau/hirid-a-high-time-resolution-icu-dataset-1.1.1/Data_of_interest/All_Observation_GFR_calcule.csv'
+IndexInteret = ['patientid','datetime','value','variableid']
+d_type = {'patientid':int, 'value':float, 'variableid':int}
+
 # Lire le fichier CSV
-df = pd.read_csv('c:/Users/hamon/OneDrive/Bureau/hirid-a-high-time-resolution-icu-dataset-1.1.1/Data_of_interest/All_Observation_GFR.csv', sep=',', low_memory= False)
+df = pd.read_csv(path_in, sep=',', usecols=IndexInteret, parse_dates=['datetime'], dtype=d_type)
 
-
-#Garde les colonnes d'intérêts
-df = df.drop(['entertime','status', 'stringvalue', 'type'], axis=1)
 
 # Convertir la colonne 'datetime' en datetime puis extraire 'time' et 'date'
 df['time'] = pd.to_datetime(df['datetime']).dt.time
@@ -54,11 +56,11 @@ else:
 # Réinitialiser l'index pour remettre les colonnes en ordre
 df_pivot = df_pivot.reset_index()
 
-# Ajouter la colonne DFG à la première position si elle existe
+# Ajouter la colonne DFG à la deuxième position si elle existe
 if 'DFG' in df_pivot.columns:
     cols = df_pivot.columns.tolist()
     cols.insert(2, cols.pop(cols.index('DFG')))  
     df_pivot = df_pivot[cols]
 
 # Enregistrer le fichier CSV mis à jour
-df_pivot.to_csv('c:/Users/hamon/OneDrive/Bureau/hirid-a-high-time-resolution-icu-dataset-1.1.1/Data_of_interest/All_Observation_GFR_calcule.csv', index=False)
+df_pivot.to_csv(path_out, index=False)
