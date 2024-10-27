@@ -1,0 +1,75 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Oct 10 10:27:46 2024
+
+@author: hamon
+"""
+
+path_in = "c:/Users/hamon/OneDrive/Bureau/hirid-a-high-time-resolution-icu-dataset-1.1.1/Data_of_interest\\All_Observation_GFR.csv"
+IndexInterest = ['patientid','datetime','value','variableid', 'status'] 
+d_type = {'patientid':int, 'value':float, 'variableid':int, 'status':int}
+VariableInterest = [200, 100, 600, 120, 620, 110, 610, 4000, 8280, 30005010, 30005110, 30005075]
+RenameVariable = {200 : 'Heart_Rate',
+                  30005010 : 'Fluid_balance_IN',
+                  30005110 : 'Fluid_balance_OUT',
+                  30005075 : 'Infusion_of_saline_solution'}
+path_out = 'c:/Users/hamon/OneDrive/Bureau/hirid-a-high-time-resolution-icu-dataset-1.1.1/Data_of_interest\\Tableau_Longitudinal.csv'
+
+import pandas as pd
+import numpy as np
+
+df = pd.read_csv(path_in, sep=',',usecols=IndexInterest, parse_dates=['datetime'], dtype=d_type)
+
+#Sélection booléene des variable d'intérêt au sein de la colonne variableID
+df = df[df['variableid'].isin(VariableInterest)]
+
+df['time'] = pd.to_datetime(df['datetime']).dt.time
+df['date'] = pd.to_datetime(df['datetime']).dt.date
+
+df_pivot = df.pivot_table(index=['patientid', 'date', 'time'], columns=['variableid'], values='value')
+
+#Créer la variable xxx Arterial Pressure, si la pression existe en sanglant (100, 110, 120) et au brassard (600, 610, 620)
+# la pression sanglante est préféré
+df_pivot['Systolic_Arterial_Pressure'] = df_pivot[100].combine_first(df_pivot[600])
+
+df_pivot['Diastolic_Arterial_Pressure'] = df_pivot[120].combine_first(df_pivot[620])
+
+df_pivot['Mean_Arterial_Pressure'] = df_pivot[110].combine_first(df_pivot[610])
+
+#Créer la variable Peripheral_oxygen_saturation, si les 2 existent choisi la 4000, sinon prend celle qui existe
+if 4000 in df_pivot.columns and 8280 in df_pivot.columns:
+    df_pivot['Peripheral_oxygen_saturation'] = df_pivot[4000].combine_first(df_pivot[8280])
+elif 4000 in df_pivot.columns:
+    df_pivot['Peripheral_oxygen_saturation'] = df_pivot[4000]
+elif 8280 in df_pivot.columns:
+    df_pivot['Peripheral_oxygen_saturation'] = df_pivot[8280]
+
+#Renomme les colonnes restantes
+df_pivot.rename(columns=RenameVariable, level=0, inplace=True, errors='coerce')
+
+#Créer la variable Fluid_Balance, qui est la différence entre les entrées et les sorties
+df_pivot['Fluid_Balance'] = df_pivot['Fluid_balance_IN'] - df_pivot['Fluid_balance_OUT']
+
+#Supprime les colonnes dont on a plus besoin
+df_pivot = df_pivot.drop(labels=[100, 600, 120, 620, 110, 610, 4000, 8280], axis = 1, errors='ignore')
+
+#Donne                                                                 
+def Filtre_Columns(df, col_limits):
+    for col, (min_value, max_value) in col_limits.items():
+        if col in df.columns:
+            df[col] = df[col].apply(lambda x: x if min_value <= x <= max_value else np.nan)
+    return df
+
+col_limits = { 'Heart_Rate' : (0, 300),
+              'Systolic_Arterial_Pressure' : (0,300),
+              'Diastolic_Arterial_Pressure': (0, 300),
+              'Mean_Arterial_Pressure': (0, 300),
+              'Peripheral_oxygen_saturation': (0, 100),
+              'Fluid_balance_IN': (0, 20000),
+              'Fluid_balance': (-20000, 20000),
+              'Fluid_balance_OUT': (0, 20000),
+              'Infusion_of_saline_solution': (0, 20000)}
+
+df_pivot = Filtre_Columns(df_pivot, col_limits)
+
+df_pivot.to_csv(path_out, index=True)
