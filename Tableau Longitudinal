@@ -51,7 +51,8 @@ elif 8280 in df_pivot.columns:
 df_pivot.rename(columns=RenameVariable, level=0, inplace=True, errors='coerce')
 
 #Créer la variable Fluid_Balance, qui est la différence entre les entrées et les sorties
-df_pivot['Fluid_Balance'] = df_pivot['Fluid_balance_IN'] - df_pivot['Fluid_balance_OUT']
+df_pivot['Fluid_Balance'] = df_pivot['Fluid_balance_IN']
+df_pivot['Fluid_Balance'] -= df_pivot['Fluid_balance_OUT']
 
 #Supprime les colonnes dont on a plus besoin
 df_pivot = df_pivot.drop(labels=[100, 600, 120, 620, 110, 610, 4000, 8280], axis = 1, errors='ignore')
