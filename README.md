@@ -1,5 +1,11 @@
 # These-HiRID
 
+The Hirid DataSet have 3 type of data :
+
+-  Observationnal data : clinical data and biological data
+-  Pharmaceutical data : all drugs use in the swiss ICU
+-  General data :sex, age, admission time, discharge status (alive or dead)
+
 Step by Step : 
 
 - 1/ In the dataset Hirid, compute patients who's can have a mesurate GFR, (have the same day a urinary creatinine, a blood creatinine, and hourly volume) 
