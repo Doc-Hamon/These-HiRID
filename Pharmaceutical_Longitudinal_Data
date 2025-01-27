@@ -1,0 +1,91 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jan  6 18:56:46 2025
+
+@author: hamon
+"""
+
+import pandas as pd
+import numpy as np
+
+path_in = "c:/Users/hamon/OneDrive/Bureau/hirid-a-high-time-resolution-icu-dataset-1.1.1/raw_stage\\pharma_records\\csv\\part-0.csv"
+path_in_weight = "c:/Users/hamon/OneDrive/Bureau/hirid-a-high-time-resolution-icu-dataset-1.1.1/Data_of_interest\\Tableau_Punctual_Test.csv"
+path_Name_Data = "/Users/hamon/OneDrive/Bureau/hirid-a-high-time-resolution-icu-dataset-1.1.1/Variables_Description.xlsx"
+IndexInterest = ['patientid','pharmaid','givenat','givendose',] 
+d_type = {'patientid':int, 'givendose':float, 'pharmaid':int, }
+
+path_out = "c:/Users/hamon/OneDrive/Bureau/hirid-a-high-time-resolution-icu-dataset-1.1.1/Data_of_interest\\Pharmaceutical_Longitudinal_Test_v2.csv"
+
+#Sélection des variables d'intérêt à partir du fichier "Variable_Descriptions"
+XEL_Variables = pd.read_excel(path_Name_Data, sheet_name=1, usecols=['Variable_Name', 'IDs', 'Longitudinal or Punctual'], dtype={'IDs' : np.int32}) 
+XEL_Variables = XEL_Variables[XEL_Variables['Longitudinal or Punctual'].str.contains("longitudinal")]
+XEL_Variables = XEL_Variables.drop(columns='Longitudinal or Punctual')
+XEL_Variables = XEL_Variables.dropna(axis=0, how='any')
+XEL_DICO = XEL_Variables.groupby('Variable_Name')['IDs'].apply(lambda x: list(x))
+XEL_DICO = XEL_DICO.to_dict()
+
+
+#Sélection du Poids du patient
+df_Weight = pd.read_csv(path_in_weight, sep=',', usecols=['patientid','Body_weight'])
+
+#Sélection des variables pharmaceutiques
+df = pd.read_csv(path_in, sep=',', usecols=IndexInterest, parse_dates=['givenat'], dtype=d_type)
+df = df[df['pharmaid'].isin(XEL_Variables['IDs'])]
+df['time'] = pd.to_datetime(df['givenat']).dt.time
+df['date'] = pd.to_datetime(df['givenat']).dt.date
+
+df_pivot = df.pivot_table(index=['patientid','date','time'], columns='pharmaid', values='givendose')
+
+#Renommer les colonnes
+mapping = {}
+for key, cols in XEL_DICO.items():
+    for col in cols:
+        if col in df_pivot.columns:
+            mapping[col] = key
+
+df_pivot.rename(columns=mapping, inplace=True)
+df_pivot.rename(columns=lambda x: x.replace('Â', '').strip(), inplace=True)
+
+#Rajout de la colonne poids, et merge selon l'ID du patient
+index_backup = df_pivot.index
+df_pivot = df_pivot.reset_index(level=[1, 2])
+df_pivot = df_pivot.merge(df_Weight, how='left', on=['patientid'], )
+df_pivot = df_pivot.drop_duplicates(keep='first', subset = 'time')
+
+#Prépare les opérations sur le time
+df['time'] = pd.to_datetime(df['givenat']).dt.time
+df_pivot['time'] = df_pivot['time'].apply(lambda x: x.replace(microsecond=0))
+df_pivot['time'] = pd.to_datetime(df_pivot['date'].astype(str) + ' ' + df_pivot['time'].astype(str))
+
+
+#Calcul mathématique des doses et Somme des colonnes
+##NORADRENALINE
+#Noradrenalin 10 µg/ml Bolus, 1 bolus est considéré être donné sur 1 minute
+df_pivot['Noradrenalin 10 µg/ml Bolus'] = df_pivot['Noradrenalin 10 µg/ml Bolus']/df_pivot['Body_weight']
+
+#Noradrenaline 20gamma
+df_NOR20 = df_pivot[['patientid','date','time', 'Noradrenalin 20 µg/ml Perfusor']]
+df_NOR20 = df_NOR20.dropna()
+df_NOR20['DeltaTime'] = df_NOR20.groupby(['patientid', 'date'])['time'].diff().dt.total_seconds()
+df_NOR20.set_index(['patientid', 'date', 'time'], inplace=True)
+df_NOR20 = df_NOR20.drop(columns = 'Noradrenalin 20 µg/ml Perfusor')
+
+df_pivot.set_index(['patientid', 'date', 'time'], inplace=True)
+df_pivot = df_pivot.join(df_NOR20, how='left',).reset_index()
+
+
+
+df_pivot['Noradrenalin 20 µg/ml Perfusor'] = df_pivot['Noradrenalin 20 µg/ml Perfusor']*60/(df_pivot['Body_weight']*
+                                                                                            df_pivot['DeltaTime'])
+
+#df_pivot['DeltaTime'] = df_pivot['patientid', 'date', 'time'].groupby('Noradrenalin 20 µg/ml Perfusor').diff()
+#df_pivot['DeltaTime'] = df_pivot['DeltaTime'].dt.total_seconds()
+
+
+#df_pivot['Noradrenalin 20 µg/ml Perfusor'] = df_pivot['Noradrenalin 20 µg/ml Perfusor']*(-60)/(
+#    df_pivot['Weight']*df_pivot['DeltaTime'])
+                                                                                         
+
+
+df_pivot.to_csv(path_out, index=True)                                                                                    
+
