@@ -22,5 +22,10 @@ Use "Extract_all_Observation_data_from_computable_patient" in bash
 - 3/Calcul the GFR from the patient :
 Use "Calcul_DFG"
 
-- 4/ Create a new data set with the variable of interest, from Observationnal Data
+- 4/ Create a new data set with the variable of interest and calculated variable, from Observationnal Data
 Use "Tableau Longitudinal"
+
+- 4bis/ Create a new data set with the variable of interest, from Observationnal Data
+Use "Tableau Punctual"
+
+- 5ter/ 
