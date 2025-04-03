@@ -37,6 +37,9 @@ df_pivot['time'] = df_pivot['time'].apply(lambda x: x.replace(second=0, microsec
 df_pivot['time'] = pd.to_datetime(df_pivot['date'].astype(str) + ' ' + df_pivot['time'].astype(str))
 df_pivot['hour'] = df_pivot['time'].apply(lambda x: x.replace(minute=0))
 
+#Regroupe les lignes par le temps.
+df_pivot = df_pivot.groupby(['patientid','time']).first().reset_index()
+
 #Créer la variable xxx Arterial Pressure, si la pression existe en sanglant (100, 110, 120) et au brassard (600, 610, 620)
 # la pression sanglante est préféré
 df_pivot['Systolic_Arterial_Pressure'] = df_pivot[100].combine_first(df_pivot[600])
@@ -112,7 +115,6 @@ df_pivot['DAS_SDNN_24h'] = df_pivot.groupby(['patientid', 'date'])['Diastolic_Ar
 df_pivot['DAS_SDNN_1h']= np.nan
 df_pivot['DAS_SDNN_1h']= df_pivot.groupby(['patientid', 'hour'])['Diastolic_Arterial_Pressure'].transform(lambda x: np.std(x, ddof=1))
 
-
-df_pivot.drop(columns='hour') 
+df_pivot = df_pivot.drop(columns=['hour','date']) 
 
 df_pivot.to_csv(path_out, index=True)
