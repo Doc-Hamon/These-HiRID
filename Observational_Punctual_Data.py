@@ -20,7 +20,9 @@ VariableIN = [410, 7100, 400, #Temperature
               15001166, 15001552 ,10020000 , 10000100,10000200 ,10000300 , 15001565 , 10000400 ,
               10000450 , 20004200 , 24000524 , 20000300 , 20001200 , 20000200 ,
               20000800 ,20004100 ,20000600 ,20003200 ,24000754 ,20000700 ,
-              20000110 , 24000665 , 30000140]   
+              20000110 , 24000665 , 30000140,
+              20002200, 24000569, 24000570
+]   
               
 ColonneDROP = [410, 7100, 400,
               700, 15001441, 960,
@@ -30,7 +32,7 @@ ColonneDROP = [410, 7100, 400,
               20000400, 24000519, 24000658, 24000835, 24000866,
               24000439, 24000521,
               24000572, 24000573,
-              20005110, 24000523, 24000585 ]
+              20005110, 24000523, 24000585, ]
 
 path_out = 'c:/Users/hamon/OneDrive/Bureau/hirid-a-high-time-resolution-icu-dataset-1.1.1/Data_of_interest\\Tableau_Punctual.csv'
 
@@ -150,7 +152,10 @@ RenameVariable = {15001166 : 'Circadian_rhythm',
                   20000700 : 'Leucocyte_blood',
                   20000110 : 'Platelets_blood',
                   24000665 : 'Cortisol_blood',
-                  30000140 : 'Appache_2'}    
+                  30000140 : 'Appache_2',
+                  20002200 : 'C_reactive_protein',
+                  24000569 : 'Natriuretic_peptide_B_prohormone_NTerminal',
+                  24000570 : 'Procalcitonin'}    
 
 df_pivot.rename(columns=RenameVariable, level=0, inplace=True, errors='coerce')
 
@@ -198,7 +203,28 @@ col_limits = { 'Temperature' : (0, 45),
               'Apache_2':(0,71),
               'BMI' : (0, 150),
               'GSC_Total' : (3, 15),
+              'C_reactive_protein' : (0, 10000),
+              'Natriuretic_peptide_B_prohormone_NTerminal' : (0, 100000),
+              'Procalcitonin' : (0, 10000),
               }
 
 df_pivot = Filtre_Columns(df_pivot, col_limits)
+
+#Créer la variable J-X : correspondd au nombre de jour depuis l'admission
+df_pivot['Days_from_admission'] = np.nan
+
+path_General_Data = "c:/Users/hamon/OneDrive/Bureau/hirid-a-high-time-resolution-icu-dataset-1.1.1/Data_of_interest/general_table_GFR.csv"
+df_general_data = pd.read_csv(path_General_Data, sep=',', usecols=['patientid', 'sex', 'age', 'admissiontime'])
+
+df_pivot = df_pivot.reset_index()
+df_pivot =  df_pivot.merge(df_general_data, how = 'left', on=['patientid'])
+
+df_pivot['date'] = pd.to_datetime(df_pivot['date'])
+df_pivot['admissiontime'] = pd.to_datetime(df_pivot['admissiontime'])
+
+df_pivot['Days_from_admission'] = (df_pivot['date'] - df_pivot['admissiontime']).dt.days + 1
+
+df_pivot = df_pivot.drop(columns ='admissiontime')
+
+
 df_pivot.to_csv(path_out, index=True)
