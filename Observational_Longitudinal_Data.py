@@ -8,14 +8,15 @@ Created on Thu Oct 10 10:27:46 2024
 path_in = "c:/Users/hamon/OneDrive/Bureau/hirid-a-high-time-resolution-icu-dataset-1.1.1/Data_of_interest\\All_Observation_GFR.csv"
 IndexInterest = ['patientid','datetime','value','variableid', 'status'] 
 d_type = {'patientid':int, 'value':float, 'variableid':int, 'status':int}
-VariableInterest = [200, 100, 600, 120, 620, 110, 610, 1000, 4000, 8280, 30005010, 30005110, 30005075, 30005080]
+VariableInterest = [200, 100, 600, 120, 620, 110, 610, 1000, 4000, 8280, 30005010, 30005110, 30005075, 30005080, 10020000]
 RenameVariable = {200 : 'Heart_Rate',
                   30005010 : 'Fluid_balance_IN',
                   30005110 : 'Fluid_balance_OUT',
                   30005075 : 'Infusion_of_saline_solution',
                   1000 : 'Cardiac_output',
                   30005080 : 'Intravenous_fluid_colloid_administration',
-                  }
+                  10020000 : 'Hourly_urine_volume'}
+
 path_out = 'c:/Users/hamon/OneDrive/Bureau/hirid-a-high-time-resolution-icu-dataset-1.1.1/Data_of_interest\\Tableau_Longitudinal.csv'
 
 import pandas as pd
@@ -83,7 +84,8 @@ col_limits = { 'Heart_Rate' : (0, 300),
               'Fluid_balance_OUT': (0, 20000),
               'Infusion_of_saline_solution': (0, 20000),
               'Cardiac_output':(0, 100),
-              'Intravenous_fluid_colloid_administration':(0, 2000)}
+              'Intravenous_fluid_colloid_administration':(0, 2000),
+              'Hourly_urine_volume' : (0, 5000)}
 
 df_pivot = Filtre_Columns(df_pivot, col_limits)
 
